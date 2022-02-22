@@ -23,14 +23,6 @@ jobs:
       - name: 🛠 Build
         run: npm run build
 
-      - name: 🤡 Setup example
-        run: npm pack && cd example && npm install
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.READ_PACKAGES_WEB  }}
-
-      - name: ⚙️ Type check
-        run: npx tsc
-
       - name: 📦 Semantic Release
         uses: cycjimmy/semantic-release-action@v2
         id: semantic
