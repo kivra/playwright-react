@@ -7,6 +7,9 @@
     "build": "npx tsc -p tsconfig.build.json",
     "test": "npx playwright test tests/"
   },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "exports": {
     ".": "./dist/index.js",
     "./package.json": "./package.json",

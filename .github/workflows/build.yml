@@ -25,6 +25,8 @@ jobs:
 
       - name: 🤡 Setup example
         run: npm pack && cd example && npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.READ_PACKAGES_WEB  }}
 
       - name: ⚙️ Type check
         run: npx tsc
