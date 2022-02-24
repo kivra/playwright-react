@@ -61,7 +61,12 @@ function asyncRender(
   return new Promise<void>((resolve, reject): void => {
     try {
       reactRender(
-        <div className="playwright_react_component_wrapper">{element}</div>,
+        <div
+          className="playwright_react_component_wrapper"
+          style={{ display: "inline-block" }}
+        >
+          {element}
+        </div>,
         node,
         resolve
       );
