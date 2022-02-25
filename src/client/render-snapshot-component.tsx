@@ -1,7 +1,6 @@
 import { render as reactRender, unmountComponentAtNode } from "react-dom";
 import React from "react";
 
-const testPath = new URL(document.location.href).searchParams.get("test");
 const EXPOSE_FUNCTION_NAME = "__PLAYWRIGHT_REACT__";
 const playwrightBridge = window[EXPOSE_FUNCTION_NAME];
 
@@ -24,26 +23,19 @@ export interface SnapshotTest {
 async function executeTest(
   cb: (Component: () => JSX.Element) => JSX.Element
 ): Promise<void> {
-  if (!testPath) {
-    throw new Error(
-      `"test" param is missing. You need to add a path to a test in the url. eg. "?test=my/path/Test.tsx"`
-    );
-  }
-  const tests: SnapshotTest[] = await import(/* @vite-ignore */ testPath).then(
-    (m) => m.tests
-  );
-  const rootNode = document.getElementById("app")!;
+  const tests = await getTests();
+  const rootNode = getRootNode();
 
   for (const test of tests) {
-    if (!test || !test.name || !test.render) {
-      throw new Error(`Snapshot test most inclode both "name" and "render"`);
-    }
+    assertTest(test);
     if (test.viewportSize) {
       await playwrightBridge("setViewportSize", test.viewportSize);
     }
     unmountComponentAtNode(rootNode);
-    const CompUnderTest = () => <>{test.render!()}</>;
-    await asyncRender(cb(CompUnderTest), rootNode);
+    await asyncRender(
+      cb(() => test.render()),
+      rootNode
+    );
     if (test.waitTime) {
       await new Promise((res) => setTimeout(res, test.waitTime));
     }
@@ -76,16 +68,65 @@ function asyncRender(
   });
 }
 
+async function renderAllSnapshots(
+  cb: (Component: () => JSX.Element) => JSX.Element
+) {
+  const tests = await getTests();
+  const styling = {
+    fieldset: { marginBottom: 50 },
+    legend: {
+      backgroundColor: "#000",
+      color: "#fff",
+      padding: "3px 6px",
+      font: "1rem 'Fira Sans', sans-serif",
+    },
+    wrapper: { margin: 20 },
+  };
+  const testComponents = tests.map((test, key) => {
+    assertTest(test);
+    return (
+      <fieldset style={styling.fieldset} key={key}>
+        <legend style={styling.legend}>{test.name}</legend>
+        <div style={styling.wrapper}>{cb(() => test.render())}</div>
+      </fieldset>
+    );
+  });
+
+  reactRender(testComponents, getRootNode());
+}
+
+function assertTest(
+  test: SnapshotTest
+): asserts test is Required<SnapshotTest> {
+  if (!test || !test.name || !test.render) {
+    throw new Error(`Snapshot test most inclode both "name" and "render"`);
+  }
+}
+
+function getRootNode(): HTMLElement {
+  const rootNode = document.getElementById("app");
+  if (!rootNode) {
+    throw new Error('Can not found element with id "app"');
+  }
+  return rootNode;
+}
+
+function getTests(): Promise<SnapshotTest[]> {
+  const testPath = new URL(document.location.href).searchParams.get("test");
+  if (!testPath) {
+    throw new Error(
+      `"test" param is missing. You need to add a path to a test in the url. eg. "?test=my/path/Test.tsx"`
+    );
+  }
+  return import(/* @vite-ignore */ testPath).then((m) => m.tests);
+}
+
 export function mountAndTakeSnapshot(
   cb: (Component: () => JSX.Element) => JSX.Element
 ): void {
   if (!playwrightBridge) {
     // We are not running in playwright
-    window[EXPOSE_FUNCTION_NAME] = (...args: any): Promise<void> => {
-      console.log("Calling playwright with: ", args);
-      return Promise.resolve();
-    };
-    executeTest(cb);
+    renderAllSnapshots(cb);
   } else {
     playwrightBridge.run = (): Promise<void> => executeTest(cb);
   }

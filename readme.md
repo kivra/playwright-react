@@ -195,14 +195,10 @@ const config: PlaywrightTestConfig = {
   testDir: 'src',
   testMatch: '**/*.spec.ts',
   use: {
-    viewport: null,
+    viewport: { height: 1080, width: 1920 },
   },
   react: {
     snapshotFileGlob: './src/**/*.snap.tsx',
-    wrapper: {
-      path: './.playwright/Wrapper',
-      componentName: 'Wrapper'
-    }
   }
 };
 export default config;
@@ -212,8 +208,10 @@ Create a `Wrapper` component that will wrap every snapshot:
 ```tsx
 // .playwright/Wrapper.tsx
 import React from "react";
+import { mountAndTakeSnapshot } from '@kivra/playwright-react/client';
+import { Wrapper } from './Wrapper';
 
-export function Wrapper({ children }: { children: JSX.Element }) {
+function Wrapper({ children }: { children: JSX.Element }) {
   return (
     <div>
       <Theme color="dark">{children}</Theme>
@@ -222,8 +220,16 @@ export function Wrapper({ children }: { children: JSX.Element }) {
   );
 }
 
+mountAndTakeSnapshot(Test => (
+  <Wrapper>
+    <Test />
+  </Wrapper>
+));
 ```
 
+TODO: Document the server setup
+
+Playwright will now take a snapshot of all your components in your `./src/**/*.snap.tsx` files
 
 ## Development
 
