@@ -57,7 +57,7 @@ export const componentTest = test.extend<
     const _mount = async (
       comp: (args: TestArgs) => Promise<() => JSX.Element>
     ) => {
-      const source = `import { render } from 'react-dom';
+      const source = `import { createRoot } from 'react-dom/client';
       import React from 'react';
       if (!window._interopRequireWildcard) {
         window._interopRequireWildcard = i => i;
@@ -65,8 +65,15 @@ export const componentTest = test.extend<
       async function run() {
         ${spyArgsSetup}
         const ComponentToTest = await (${comp})(args);
-        await new Promise(r => {
-          render(React.createElement(ComponentToTest), document.getElementById('root'), r);
+        await new Promise((resolve, reject) => {
+          try {
+            const node = document.getElementById('root');
+            const root = createRoot(node);
+            root.render(React.createElement(ComponentToTest));
+            resolve();
+          } catch(error) {
+            reject(error);
+          }
         });
       }
 

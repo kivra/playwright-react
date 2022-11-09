@@ -20,7 +20,7 @@ componentTest(
     expect(events.callCount("click")).toBe(0);
     await page.locator("text=Hello! My name is Dexter").click();
     expect(events.callCount("click")).toBe(1);
-    expect(events.args("click")[0][0]).toBe("Dexter");
+    expect(events.args("click")[0][0]).toContain("Dexter");
   }
 );
 

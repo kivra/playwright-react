@@ -1,4 +1,5 @@
-import { render as reactRender, unmountComponentAtNode } from "react-dom";
+import { unmountComponentAtNode } from "react-dom";
+import { createRoot } from "react-dom/client";
 import React from "react";
 
 const EXPOSE_FUNCTION_NAME = "__PLAYWRIGHT_REACT__";
@@ -50,18 +51,20 @@ function asyncRender(
   element: React.FunctionComponentElement<unknown>,
   node: Element
 ): Promise<void> {
+  const root = createRoot(node);
+
   return new Promise<void>((resolve, reject): void => {
     try {
-      reactRender(
+      root.render(
         <div
           className="playwright_react_component_wrapper"
           style={{ display: "inline-block" }}
         >
           {element}
-        </div>,
-        node,
-        resolve
+        </div>
       );
+
+      resolve();
     } catch (error) {
       reject(error);
     }
@@ -92,7 +95,8 @@ async function renderAllSnapshots(
     );
   });
 
-  reactRender(testComponents, getRootNode());
+  const root = createRoot(getRootNode());
+  root.render(testComponents);
 }
 
 function assertTest(
