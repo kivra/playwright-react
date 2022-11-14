@@ -26,7 +26,7 @@ export function setup<Components extends Record<string, any>>(
       watch: false,
       stdin: {
         contents: `
-          import { render } from 'react-dom';
+          import { createRoot } from 'react-dom/client';
           import React from 'react';
           async function setup() {
             if (!window._interopRequireWildcard) {
@@ -37,8 +37,15 @@ export function setup<Components extends Record<string, any>>(
             }
             ${CompsStr}
             const ComponentToTest = ${cp};
-            await new Promise(r => {
-              render(ComponentToTest(${CompsNameArgument}), document.getElementById('root'), r);
+            await new Promise((resolve, reject) => {
+              try {
+                const node = document.getElementById('root');
+                const root = createRoot(node);
+                root.render(ComponentToTest(${CompsNameArgument}));
+                resolve();
+              } catch(error) {
+                reject(error);
+              }
             });
           }
     
