@@ -1,5 +1,4 @@
-import { unmountComponentAtNode } from "react-dom";
-import { createRoot } from "react-dom/client";
+import { createRoot, Root } from "react-dom/client";
 import React from "react";
 
 const EXPOSE_FUNCTION_NAME = "__PLAYWRIGHT_REACT__";
@@ -26,16 +25,16 @@ async function executeTest(
 ): Promise<void> {
   const tests = await getTests();
   const rootNode = getRootNode();
+  const root = createRoot(rootNode);
 
   for (const test of tests) {
     assertTest(test);
     if (test.viewportSize) {
       await playwrightBridge("setViewportSize", test.viewportSize);
     }
-    unmountComponentAtNode(rootNode);
     await asyncRender(
       cb(() => test.render()),
-      rootNode
+      root
     );
     if (test.waitTime) {
       await new Promise((res) => setTimeout(res, test.waitTime));
@@ -44,15 +43,14 @@ async function executeTest(
       await test.waitForFunc();
     }
     await playwrightBridge("snapshot", test.name);
+    root.unmount();
   }
 }
 
 function asyncRender(
   element: React.FunctionComponentElement<unknown>,
-  node: Element
+  root: Root
 ): Promise<void> {
-  const root = createRoot(node);
-
   return new Promise<void>((resolve, reject): void => {
     try {
       root.render(
