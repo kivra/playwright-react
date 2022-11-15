@@ -43,7 +43,7 @@ async function executeTest(
       await test.waitForFunc();
     }
     await playwrightBridge("snapshot", test.name);
-    root.unmount();
+    // root.unmount();
   }
 }
 
